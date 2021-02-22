@@ -9,7 +9,7 @@ from django import forms
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from posts.models import Post, Group, Follow
+from posts.models import Post, Group
 
 
 class ViewsTest(TestCase):
