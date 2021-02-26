@@ -9,7 +9,7 @@ from django import forms
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from posts.models import Post, Group
+from posts.models import Post, Group, Follow
 
 
 class ViewsTest(TestCase):
@@ -160,13 +160,16 @@ class ViewsTest(TestCase):
         response = self.authorized_client.get('posts:index')
         self.assertEqual(cached_response_content, response.content)
 
-    def test_follow_auth(self):
+    def test_follow(self):
         """Авторизованный пользователь может подписываться
-         на других пользователей и удалять их из подписок."""
+         на других пользователей"""
         self.authorized_client.get(
             reverse('posts:profile_follow', kwargs={'username': self.user}))
         response = self.authorized_client.get(reverse('posts:follow_index'))
         self.assertEqual(response.context.get('page')[0].author, self.user)
+
+    def test_follow_unfollow(self):
+        """Авторизованный пользователь может удалять из из подписок."""
         self.authorized_client.get(
             reverse('posts:profile_unfollow', kwargs={'username': self.user}))
         response = self.authorized_client.get(reverse('posts:follow_index'))
@@ -175,9 +178,8 @@ class ViewsTest(TestCase):
     def test_follow_new_post(self):
         """Новая запись пользователя появляется в ленте тех,
         кто на него подписан и не появляется в ленте тех, кто не подписан на него."""
-        self.authorized_client.get(
-            reverse('posts:profile_follow', kwargs={'username': self.user}))
         Post.objects.create(text='Новый пост автора', author=self.user)
+        Follow.objects.create(author=self.user, user=self.user_two)
         response = self.authorized_client.get(reverse('posts:follow_index'))
         self.assertEqual(response.context.get('page')[0].text, 'Новый пост автора')
         response = self.authorized_client_two.get(reverse('posts:follow_index'))
@@ -195,6 +197,12 @@ class ViewsTest(TestCase):
             reverse('posts:post', kwargs={'username': self.user.username,
                                           'post_id': self.post.id}))
         self.assertEqual(response.context.get('comments')[0].text, 'Автор жжёт! Ставлю класс!')
+
+    def test_comment_anon(self):
+        """Авториизированный пользователь не может комментировать посты"""
+        comment = {'post': self.post,
+                   'author': self.user,
+                   'text': 'Автор жжёт! Ставлю класс!'}
         response = self.guest_client.post(
             reverse('posts:add_comment', kwargs={'username': self.user.username,
                                                  'post_id': self.post.id}), data=comment)

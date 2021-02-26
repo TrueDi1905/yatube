@@ -20,7 +20,7 @@ def index(request):
 
 def group_posts(request, slug):
     group = get_object_or_404(Group, slug=slug)
-    paginator = Paginator(group.posts.all()[:12], 10)
+    paginator = Paginator(group.posts.all(), 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
     return render(request, "group.html", {"group": group, "page": page,
@@ -41,25 +41,26 @@ def new_post(request):
     return render(request, "new_post.html", {'form': form})
 
 
-class JustStaticPage(TemplateView):
-    template_name = 'about_author.html'
-
-
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    post_list = author.posts.order_by('-pub_date')
+    post_list = author.posts.all()
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    following = ''
+    follow_count_user = Follow.objects.filter(user=author).count()
+    follow_count_author = Follow.objects.filter(author=author).count()
+    following = False
     if request.user.is_authenticated:
-        following = Follow.objects.filter(author__following__user=request.user)
+        if Post.objects.filter(author__following__user=request.user).exists():
+            following = True
     context = {
         'author': author,
         'page': page,
         'post_list': post_list,
         'paginator': paginator,
         'following': following,
+        'follow_count_user': follow_count_user,
+        'follow_count_author': follow_count_author
     }
     return render(request, 'profile.html', context=context)
 
@@ -69,13 +70,19 @@ def post_view(request, username, post_id):
     post = get_object_or_404(Post, id=post_id)
     comments = Comment.objects.filter(post=post)
     form = CommentForm()
+    follow_count_user = Follow.objects.filter(user=author).count()
+    follow_count_author = Follow.objects.filter(author=author).count()
     return render(request, 'post.html', {'post': post, 'author': author,
-                                         'comments': comments, 'form': form})
+                                         'comments': comments, 'form': form,
+                                         'username': username, 'post_id': post_id,
+                                         'follow_count_user': follow_count_user,
+                                         'follow_count_author': follow_count_author})
 
 
 @login_required
 def post_edit(request, username, post_id):
-    post = get_object_or_404(Post, id=post_id)
+    user = get_object_or_404(User, username=username)
+    post = get_object_or_404(Post, id=post_id, author=user)
     if request.user.username != post.author.username:
         return redirect('posts:post', username, post_id)
     form = PostForm(request.POST or None, instance=post)
@@ -109,7 +116,6 @@ def add_comment(request, username, post_id):
             comment.post = get_object_or_404(Post, id=post_id)
             comment.save()
             return redirect('posts:post', post_id=post_id, username=username)
-        return render(request, "comments.html", {'form': form})
     form = CommentForm()
     post = get_object_or_404(Post, id=post_id)
     return render(request, "comments.html", {'form': form, 'post_id': post.id, 'username': post.author.username})
@@ -126,14 +132,14 @@ def follow_index(request):
 
 @login_required
 def profile_follow(request, username):
-    fol = get_object_or_404(User, username=username)
-    follow = Follow.objects.filter(user=request.user, author=fol)
+    follow_user = get_object_or_404(User, username=username)
+    follow = Follow.objects.filter(user=request.user, author=follow_user)
     if follow or request.user.username == username:
         return redirect("/")
     else:
         pod = Follow()
         pod.user = request.user
-        pod.author = fol
+        pod.author = follow_user
         pod.save()
     return redirect("/")
 
