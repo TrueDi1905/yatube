@@ -199,7 +199,7 @@ class ViewsTest(TestCase):
         self.assertEqual(response.context.get('comments')[0].text, 'Автор жжёт! Ставлю класс!')
 
     def test_comment_anon(self):
-        """Авториизированный пользователь не может комментировать посты"""
+        """Неавториизированный пользователь не может комментировать посты"""
         comment = {'post': self.post,
                    'author': self.user,
                    'text': 'Автор жжёт! Ставлю класс!'}
