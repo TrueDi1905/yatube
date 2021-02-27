@@ -117,8 +117,8 @@ def add_comment(request, username, post_id):
             return redirect('posts:post', post_id=post_id, username=username)
     form = CommentForm()
     post = get_object_or_404(Post, id=post_id)
-    return redirect(request, "comments.html", {'form': form, 'post_id': post.id, 'username': post.author.username})
-
+    return render(request, "comments.html", {'form': form, 'post_id': post.id, 'username': post.author.username})
+    #при замене render на redirect, пайтест ругается. Поэтому оставил так.
 
 @login_required
 def follow_index(request):
