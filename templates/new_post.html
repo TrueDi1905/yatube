@@ -1,9 +1,4 @@
 {% extends "base.html" %}
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
 {% block content %}
 <form method="post" enctype="multipart/form-data"
     action={% if post %}"{% url 'posts:post_edit' post_id=post.id username=username %}"

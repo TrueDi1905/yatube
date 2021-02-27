@@ -1,3 +1,4 @@
+from django.urls import reverse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -46,11 +47,11 @@ def profile(request, username):
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    follow_count_user = Follow.objects.filter(user=author).count()
-    follow_count_author = Follow.objects.filter(author=author).count()
+    follow_user = Follow.objects.filter(user=author)
+    follow_author = Follow.objects.filter(author=author)
     following = False
     if request.user.is_authenticated:
-        if Post.objects.filter(author__following__user=request.user).exists():
+        if Follow.objects.filter(author__following__user=request.user).exists():
             following = True
     context = {
         'author': author,
@@ -58,8 +59,8 @@ def profile(request, username):
         'post_list': post_list,
         'paginator': paginator,
         'following': following,
-        'follow_count_user': follow_count_user,
-        'follow_count_author': follow_count_author
+        'follow_user': follow_user,
+        'follow_author': follow_author,
     }
     return render(request, 'profile.html', context=context)
 
@@ -69,19 +70,18 @@ def post_view(request, username, post_id):
     post = get_object_or_404(Post, id=post_id)
     comments = Comment.objects.filter(post=post)
     form = CommentForm()
-    follow_count_user = Follow.objects.filter(user=author).count()
-    follow_count_author = Follow.objects.filter(author=author).count()
+    follow_user = Follow.objects.filter(user=author)
+    follow_author = Follow.objects.filter(author=author)
     return render(request, 'post.html', {'post': post, 'author': author,
                                          'comments': comments, 'form': form,
                                          'username': username, 'post_id': post_id,
-                                         'follow_count_user': follow_count_user,
-                                         'follow_count_author': follow_count_author})
+                                         'follow_user': follow_user,
+                                         'follow_author': follow_author})
 
 
 @login_required
 def post_edit(request, username, post_id):
-    user = get_object_or_404(User, username=username)
-    post = get_object_or_404(Post, id=post_id, author=user)
+    post = get_object_or_404(Post, id=post_id, author__username=username)
     if request.user.username != post.author.username:
         return redirect('posts:post', username, post_id)
     form = PostForm(request.POST or None, instance=post)
@@ -117,7 +117,7 @@ def add_comment(request, username, post_id):
             return redirect('posts:post', post_id=post_id, username=username)
     form = CommentForm()
     post = get_object_or_404(Post, id=post_id)
-    return render(request, "comments.html", {'form': form, 'post_id': post.id, 'username': post.author.username})
+    return redirect(request, "comments.html", {'form': form, 'post_id': post.id, 'username': post.author.username})
 
 
 @login_required
@@ -134,13 +134,13 @@ def profile_follow(request, username):
     follow_user = get_object_or_404(User, username=username)
     follow = Follow.objects.filter(user=request.user, author=follow_user)
     if follow or request.user.username == username:
-        return redirect("/")
+        return redirect(reverse('posts:profile', kwargs={'username': username}))
     else:
         pod = Follow()
         pod.user = request.user
         pod.author = follow_user
         pod.save()
-    return redirect("/")
+    return redirect(reverse('posts:profile', kwargs={'username': username}))
 
 
 @login_required
@@ -148,4 +148,4 @@ def profile_unfollow(request, username):
     fol = get_object_or_404(User, username=username)
     follow = Follow.objects.filter(author=fol, user=request.user)
     follow.delete()
-    return redirect("/")
+    return redirect(reverse('posts:profile', kwargs={'username': username}))

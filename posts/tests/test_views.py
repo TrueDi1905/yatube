@@ -165,23 +165,22 @@ class ViewsTest(TestCase):
          на других пользователей"""
         self.authorized_client.get(
             reverse('posts:profile_follow', kwargs={'username': self.user}))
-        response = self.authorized_client.get(reverse('posts:follow_index'))
-        self.assertEqual(response.context.get('page')[0].author, self.user)
+        self.assertTrue(Follow.objects.filter(user=self.user_two, author=self.user))
 
     def test_follow_unfollow(self):
-        """Авторизованный пользователь может удалять из из подписок."""
+        """Авторизованный пользователь может удалять из подписок."""
+        Follow.objects.create(user=self.user_two, author=self.user)
         self.authorized_client.get(
             reverse('posts:profile_unfollow', kwargs={'username': self.user}))
-        response = self.authorized_client.get(reverse('posts:follow_index'))
-        self.assertIsNot(response.context, False)
+        self.assertFalse(Follow.objects.filter(user=self.user_two, author=self.user))
 
     def test_follow_new_post(self):
         """Новая запись пользователя появляется в ленте тех,
         кто на него подписан и не появляется в ленте тех, кто не подписан на него."""
-        Post.objects.create(text='Новый пост автора', author=self.user)
+        post = Post.objects.create(text='Новый пост автора', author=self.user)
         Follow.objects.create(author=self.user, user=self.user_two)
         response = self.authorized_client.get(reverse('posts:follow_index'))
-        self.assertEqual(response.context.get('page')[0].text, 'Новый пост автора')
+        self.assertEqual(response.context.get('page')[0].text, post.text)
         response = self.authorized_client_two.get(reverse('posts:follow_index'))
         self.assertIsNot(response.context, False)
 

@@ -1,25 +1,25 @@
-                    <div class="card">
-                            <div class="card-body">
-                                    <div class="h2">
-                                        {{ author.get_full_name }}
-                                    </div>
-                                    <div class="h3 text-muted">
-                                        {{ author.username }}
-                                    </div>
-                            </div>
-                            <ul class="list-group list-group-flush">
-                                    <li class="list-group-item">
-                                            <div class="h6 text-muted">
-                                            Подписчиков: {{ follow_count_author }} <br />
-                                            Подписан: {{ follow_count_user }}
-                                            </div>
-                                    </li>
-                                    <li class="list-group-item">
-                                            <div class="h6 text-muted">
-                                                Записей: {{ author.posts.count }}
-                                            </div>
-                                    </li>
-                                <li class="list-group-item">
+<div class="card">
+    <div class="card-body">
+        <div class="h2">
+            {{ author.get_full_name }}
+        </div>
+        <div class="h3 text-muted">
+            {{ author.username }}
+        </div>
+    </div>
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+            <div class="h6 text-muted">
+                Подписчиков: {{ follow_author.count }} <br />
+                Подписан: {{ follow_user.count }}
+            </div>
+        </li>
+        <li class="list-group-item">
+            <div class="h6 text-muted">
+                Записей: {{ author.posts.count }}
+            </div>
+        </li>
+        <li class="list-group-item">
     {% if following %}
     <a class="btn btn-lg btn-light"
             href="{% url 'posts:profile_unfollow' author.username %}" role="button">
@@ -31,6 +31,6 @@
     Подписаться
     </a>
     {% endif %}
-</li>
-                            </ul>
-                    </div>
+    </li>
+    </ul>
+</div>
