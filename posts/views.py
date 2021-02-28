@@ -47,8 +47,6 @@ def profile(request, username):
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    follow_user = Follow.objects.filter(user=author)
-    follow_author = Follow.objects.filter(author=author)
     following = False
     if request.user.is_authenticated:
         if Follow.objects.filter(author__following__user=request.user).exists():
@@ -59,8 +57,6 @@ def profile(request, username):
         'post_list': post_list,
         'paginator': paginator,
         'following': following,
-        'follow_user': follow_user,
-        'follow_author': follow_author,
     }
     return render(request, 'profile.html', context=context)
 
@@ -70,13 +66,9 @@ def post_view(request, username, post_id):
     post = get_object_or_404(Post, id=post_id)
     comments = Comment.objects.filter(post=post)
     form = CommentForm()
-    follow_user = Follow.objects.filter(user=author)
-    follow_author = Follow.objects.filter(author=author)
-    return render(request, 'post.html', {'post': post, 'author': author,
-                                         'comments': comments, 'form': form,
+    return render(request, 'post.html', {'post': post, 'author': author, 'form': form,
                                          'username': username, 'post_id': post_id,
-                                         'follow_user': follow_user,
-                                         'follow_author': follow_author})
+                                         'comments': comments})
 
 
 @login_required
@@ -107,18 +99,14 @@ def server_error(request):
 
 @login_required
 def add_comment(request, username, post_id):
-    if request.method == 'POST':
-        form = CommentForm(request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.author = request.user
-            comment.post = get_object_or_404(Post, id=post_id)
-            comment.save()
-            return redirect('posts:post', post_id=post_id, username=username)
-    form = CommentForm()
-    post = get_object_or_404(Post, id=post_id)
-    return render(request, "comments.html", {'form': form, 'post_id': post.id, 'username': post.author.username})
-    # при замене render на redirect, пайтест ругается. Поэтому оставил так
+    post = get_object_or_404(Post, id=post_id, author__username=username)
+    form = CommentForm(request.POST or None)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.author = request.user
+        comment.post = post
+        comment.save()
+    return redirect('posts:post', post.author, post_id)
 
 
 @login_required
@@ -137,10 +125,8 @@ def profile_follow(request, username):
     if follow or request.user.username == username:
         return redirect(reverse('posts:profile', kwargs={'username': username}))
     else:
-        pod = Follow()
-        pod.user = request.user
-        pod.author = follow_user
-        pod.save()
+        follow_objects = Follow.objects.create(user=request.user, author=follow_user)
+        follow_objects.save()
     return redirect(reverse('posts:profile', kwargs={'username': username}))
 
 
