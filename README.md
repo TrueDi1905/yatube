@@ -16,7 +16,7 @@
 - склонировать проект себе на компьютер
 - Создать виртуальное окружение ``` python -m venv venv ```
 - Установить зависимости ``` pip install -r backend/requirements.txt ```
-- Провести миграции ``` python manage.py migrate ``` 
-
+- Провести миграции ``` python manage.py makemigrations ``` и ``` python manage.py migrate ``` 
+- Запускаем django сервер ``` python manage.py runserver ```
 ### Автор
 Дмитрий
