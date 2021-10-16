@@ -10,12 +10,12 @@
 ### Технологии
 - Python 3.7
 - Django 3.0.5
-- 
+
 ### Установка
 - склонировать проект себе на компьютер
-- Создать виртуальное окружение python -m venv venv
-- Установить зависимости pip install -r backend/requirements.txt
-- Провести миграции  python manage.py migrate 
+- Создать виртуальное окружение ``` python -m venv venv ```
+- Установить зависимости ``` pip install -r backend/requirements.txt ```
+- Провести миграции ``` python manage.py migrate ``` 
 
 ### Автор
 Дмитрий
